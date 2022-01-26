@@ -3,7 +3,7 @@
 *&---------------------------------------------------------------------*
 *&
 *&---------------------------------------------------------------------*
-REPORT zabap_channels_receiver.
+REPORT zabap_channels_receiver_gui.
 
 CLASS lcl_amc_receiver_pcp DEFINITION FINAL CREATE PUBLIC.
 
