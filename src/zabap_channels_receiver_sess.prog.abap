@@ -1,9 +1,11 @@
 *&---------------------------------------------------------------------*
-*& Report ZABAP_CHANNELS_RECEIVER_GUI
+*& Report ZABAP_CHANNELS_RECEIVER_SESS
 *&---------------------------------------------------------------------*
 *&
 *&---------------------------------------------------------------------*
-REPORT zabap_channels_receiver_gui.
+REPORT ZABAP_CHANNELS_RECEIVER_SESS.
+
+data: gt_messages type table of string.
 
 CLASS lcl_amc_receiver_pcp DEFINITION FINAL CREATE PUBLIC.
 
@@ -20,7 +22,7 @@ CLASS lcl_amc_receiver_pcp IMPLEMENTATION.
           lt_pcp_fields TYPE pcp_fields.
 
     TRY.
-        lv_message = i_message->get_text( ).
+*        lv_message = i_message->get_text( ).
         i_message->get_fields(
           CHANGING
             c_fields = lt_pcp_fields
@@ -29,7 +31,7 @@ CLASS lcl_amc_receiver_pcp IMPLEMENTATION.
         READ TABLE lt_pcp_fields INTO DATA(lw_pcp_field)
           WITH KEY name = 'MESSAGE'.
         IF sy-subrc EQ 0.
-          WRITE:/ 'INCOMING MESSAGE: ', lw_pcp_field-value.
+          append lw_pcp_field-value to gt_messages.
         ENDIF.
 
       CATCH cx_ac_message_type_pcp_error INTO DATA(pcp_error).
@@ -48,20 +50,19 @@ ENDCLASS.
 CLASS lcl_amc_receiver_text IMPLEMENTATION.
 
   METHOD if_amc_message_receiver_text~receive.
-    WRITE:/ 'INCOMING MESSAGE: ', i_message.
+    append i_message to gt_messages.
   ENDMETHOD.
 ENDCLASS.
-
-DATA: go_consumer TYPE REF TO if_amc_message_consumer.
 
 SELECTION-SCREEN BEGIN OF BLOCK a01 WITH FRAME TITLE TEXT-001.
   PARAMETERS: p_appid  TYPE if_abap_channel_types=>ty_amc_application_id,
               p_chnid  TYPE if_abap_channel_types=>ty_amc_channel_id,
               p_chexid TYPE if_abap_channel_types=>ty_amc_channel_extension_id.
+  parameters: p_msgcnt type i default 2,
+              p_wait type i default 20.
 SELECTION-SCREEN END OF BLOCK a01.
 
-START-OF-SELECTION.
-
+start-of-selection.
   TRY.
       DATA(lo_dt_manager) = cl_amc_dt_manager=>create(
         i_application_id = p_appid
@@ -73,15 +74,11 @@ START-OF-SELECTION.
       MESSAGE amc_dt_error->get_text( ) TYPE 'I'.
   ENDTRY.
 
-  DATA(dynamic_class) = `\PROGRAM=CL_AMC_CHANNEL_MANAGER========CP` && `\CLASS=LCL_SAPGUI_CHANNEL_MANAGER`.
-
-  CALL METHOD (dynamic_class)=>create_message_consumer
+  data(go_consumer) = cl_amc_channel_manager=>create_message_consumer(
     EXPORTING
       i_application_id       = p_appid
       i_channel_id           = p_chnid
-      i_channel_extension_id = p_chexid
-    RECEIVING
-      r_consumer             = go_consumer.
+      i_channel_extension_id = p_chexid ).
 
   CASE lv_message_type.
     WHEN 'PCP'.
@@ -94,5 +91,15 @@ START-OF-SELECTION.
 
   ENDCASE.
 
-  WRITE:/ 'Connected'.
-  WRITE:/ 'Incoming messages will be listed below'.
+  WAIT FOR MESSAGING CHANNELS UNTIL
+    lines( gt_messages ) >= p_msgcnt
+    UP TO p_wait SECONDS.
+  if sy-subrc eq 0.
+    WRITE:/ 'Connected'.
+    WRITE:/ 'Incoming messages will be listed below'.
+    loop at gt_messages into data(lv_message).
+      write:/ 'INCOMING MESSAGE: ', lv_message.
+    endloop.
+  else.
+    message 'Timeout occured, no incoming messages' type 'I'.
+  endif.
