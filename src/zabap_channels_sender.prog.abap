@@ -15,11 +15,6 @@ SELECTION-SCREEN begin of block a02 WITH FRAME title text-002.
   parameters: p_msg type string LOWER CASE.
 selection-screen end of block a02.
 
-INITIALIZATION.
-  p_appid = 'ZAMC_TEST'.
-  p_chnid = '/GUIPCP'.
-  p_chexid = 'EXT1'.
-
 START-OF-SELECTION.
   try.
     data(lo_dt_manager) = cl_amc_dt_manager=>create(

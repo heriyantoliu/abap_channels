@@ -56,8 +56,8 @@ DATA: go_consumer TYPE REF TO if_amc_message_consumer.
 
 SELECTION-SCREEN BEGIN OF BLOCK a01 WITH FRAME TITLE TEXT-001.
   PARAMETERS: p_appid  TYPE if_abap_channel_types=>ty_amc_application_id,
-              p_chnid  TYPE if_abap_channel_types=>ty_amc_channel_id,
-              p_chexid TYPE if_abap_channel_types=>ty_amc_channel_extension_id.
+              p_chnid  TYPE if_abap_channel_types=>ty_amc_channel_id LOWER CASE,
+              p_chexid TYPE if_abap_channel_types=>ty_amc_channel_extension_id LOWER CASE.
 SELECTION-SCREEN END OF BLOCK a01.
 
 START-OF-SELECTION.
@@ -83,16 +83,20 @@ START-OF-SELECTION.
     RECEIVING
       r_consumer             = go_consumer.
 
-  CASE lv_message_type.
-    WHEN 'PCP'.
-      DATA(go_receiver_pcp) = NEW lcl_amc_receiver_pcp( ).
-      go_consumer->start_message_delivery( go_receiver_pcp  ).
+  try.
+    CASE lv_message_type.
+      WHEN 'PCP'.
+        DATA(go_receiver_pcp) = NEW lcl_amc_receiver_pcp( ).
+        go_consumer->start_message_delivery( go_receiver_pcp  ).
 
-    WHEN 'TEXT'.
-      DATA(go_receiver_text) = NEW lcl_amc_receiver_text( ).
-      go_consumer->start_message_delivery( go_receiver_text  ).
+      WHEN 'TEXT'.
+        DATA(go_receiver_text) = NEW lcl_amc_receiver_text( ).
+        go_consumer->start_message_delivery( go_receiver_text  ).
 
-  ENDCASE.
+    ENDCASE.
+    catch cx_root.
+      message 'Error' type 'I'.
+  endtry.
 
   WRITE:/ 'Connected'.
   WRITE:/ 'Incoming messages will be listed below'.
