@@ -67,5 +67,13 @@ CLASS ZCL_APC_WSP_EXT_ZAPC_TEST IMPLEMENTATION.
     data(lo_message) = i_message_manager->create_message( ).
     lo_message->set_text('Connected !').
     i_message_manager->send( lo_message ).
+
+    data(binding) = i_context->get_binding_manager( ).
+    binding->bind_amc_message_consumer(
+      i_application_id = 'ZAMC_TEST'
+      i_channel_id = '/apctext'
+      i_channel_extension_id = 'EXT1'
+    ).
+
   endmethod.
 ENDCLASS.
