@@ -75,5 +75,11 @@ CLASS ZCL_APC_WSP_EXT_ZAPC_TEST IMPLEMENTATION.
       i_channel_extension_id = 'EXT1'
     ).
 
+    binding->bind_amc_message_consumer(
+      i_application_id = 'ZAMC_TEST'
+      i_channel_id = '/apcpcp'
+      i_channel_extension_id = 'EXT1'
+    ).
+
   endmethod.
 ENDCLASS.
